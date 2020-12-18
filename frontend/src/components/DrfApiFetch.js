@@ -4,6 +4,7 @@ import axios from 'axios'
 const DrfApiFetch = () => {
     const [tasks, setTasks] = useState([])
     const [selectedTask, setSelectedTask] = useState([])
+    const [editedTask, setEditedTask] = useState({id: '', title: ''})
     const [id, setId] = useState(1)
 
     useEffect(() => {
@@ -24,28 +25,62 @@ const DrfApiFetch = () => {
         .then(res => {setSelectedTask(res.data)})
     }
 
-    const deleteTask = () => {
+    const deleteTask = (id) => {
         axios.delete(`http://127.0.0.1:8000/api/tasks/${id}/`, {
             headers: {
                 'Authorization': 'Token 7150f3fa640cc835e149b6c941ca3e6fb1abe281'
             }
         })
-        .then(res => console.log(res))
+        .then(res => {setTasks(tasks.filter(task => task.id !== id)); setSelectedTask([])})
+    }
+
+    const newTask = (task) => {
+        const data = {
+            title: task.title
+        }
+        axios.post(`http://127.0.0.1:8000/api/tasks/`, data, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Token 7150f3fa640cc835e149b6c941ca3e6fb1abe281'
+            }
+        })
+        .then(res => setTasks([...tasks, res.data]))
+    }
+
+    const handleInputChange = () => evt => {
+        const value = evt.target.value
+        const name = evt.target.name
+        setEditedTask({...editedTask, [name]: value})
     }
 
     return (
         <div>
             <ul>
                 {
-                    tasks.map(task => <li key={task.id}>{task.title} {task.id}</li>)
+                    tasks.map(task =>
+                        <li key={task.id}>{task.title} {task.id}
+                            <button onClick={() => deleteTask(task.id)}>
+                                <i className='fas fa-trash-alt'></i>
+                            </button>
+                        </li>
+                    )
                 }
             </ul>
             Set id <br />
             <input type='text' value={id} onChange={evt => {setId(evt.target.value)}} />
             <br />
             <button type='button' onClick={() => getTask()}>Get task</button>
-            <button type='button' onClick={() => deleteTask()}>Delete task</button>
+            {/* <button type='button' onClick={() => deleteTask()}>Delete task</button> */}
             <h3>{selectedTask.title} {selectedTask.id}</h3>
+            <input
+                type='text'
+                name='title'
+                value={editedTask.title}
+                onChange={handleInputChange()}
+                placeholder='New Task'
+                required
+            />
+            <button onClick={() => newTask(editedTask)}>Create</button>
         </div>
     )
 }
